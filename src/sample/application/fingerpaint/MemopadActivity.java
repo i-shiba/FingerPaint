@@ -1,4 +1,4 @@
-package sample.application.memopad;
+package sample.application.fingerpaint;
 
 import java.text.DateFormat;
 import java.util.Date;
