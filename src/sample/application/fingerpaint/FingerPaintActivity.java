@@ -13,6 +13,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.media.MediaScannerConnection;
 import android.os.Bundle;
 import android.os.Environment;
 import android.view.Display;
@@ -24,6 +25,8 @@ import android.view.View;
 import android.view.View.OnTouchListener;
 import android.view.WindowManager;
 import android.widget.ImageView;
+import android.media.MediaScannerConnection;
+import android.net.Uri;
 
 public class FingerPaintActivity extends Activity implements OnTouchListener{
 	
@@ -125,7 +128,7 @@ public class FingerPaintActivity extends Activity implements OnTouchListener{
 		int imageNumber = prefs.getInt("imageNumber", 1);
 		File file = null;
 		
-		if(externalMediaChecker()){
+		if(this.externalMediaChecker()){
 			DecimalFormat form = new DecimalFormat("0000");
 			String path = Environment.getExternalStorageDirectory() + "/mypaint/";
 			File outDir = new File(path);
@@ -137,7 +140,8 @@ public class FingerPaintActivity extends Activity implements OnTouchListener{
 				file = new File(path + "img" + form.format(imageNumber) + ".png");
 				imageNumber++;
 			}while(file.exists());
-			if(writeImage(file)){
+			if(this.writeImage(file)){
+				scanMedia(file.getPath());
 				SharedPreferences.Editor editor = prefs.edit();
 				editor.putInt("imageNumber", imageNumber);
 				editor.commit();
@@ -165,6 +169,28 @@ public class FingerPaintActivity extends Activity implements OnTouchListener{
 			result = true;
 		}
 		return result;
+	}
+	
+	MediaScannerConnection mc;
+	public void scanMedia(final String fp){
+		mc = new MediaScannerConnection(this,
+					new MediaScannerConnection.MediaScannerConnectionClient(){
+			public void onScanCompleted(String path, Uri uri){
+				disconnect();
+			}
+			public void onMediaScannerConnected(){
+				scanFile(fp);
+			}
+		});
+	mc.connect();
+	}
+	
+	public void scanFile(String fp){
+		mc.scanFile(fp, "image/png");
+	}
+	
+	public void disconnect(){
+		mc.disconnect();
 	}
 	
 }
