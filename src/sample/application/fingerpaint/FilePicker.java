@@ -29,9 +29,8 @@ public class FilePicker extends ListActivity {
 		
 		setContentView(R.layout.filelist);
 		this.externalStorageDir = Environment.getExternalStorageDirectory().toString();
-		SharedPreferences pref = this.getSharedPreferences("MemoFilePickerPrefs",
-				MODE_PRIVATE);
-		this.dir = pref.getString("Folder", externalStorageDir + "/text");
+		SharedPreferences pref = this.getSharedPreferences("FilePickerPrefs",MODE_PRIVATE);
+		this.dir = pref.getString("Folder", externalStorageDir + "/mypaint");
 		this.makeFileFilter();
 		this.makeComparator();
 		this.showList();
@@ -40,8 +39,7 @@ public class FilePicker extends ListActivity {
 	@Override
 	protected void onStop() {
 		super.onStop();
-		SharedPreferences pref = this.getSharedPreferences("MemoFilePickerPrefs",
-				MODE_PRIVATE);
+		SharedPreferences pref = this.getSharedPreferences("FilePickerPrefs",MODE_PRIVATE);
 		SharedPreferences.Editor editor = pref.edit();
 		editor.putString("Folder", dir);
 		editor.commit();
@@ -51,7 +49,7 @@ public class FilePicker extends ListActivity {
 		this.fFilter = new FileFilter(){
 			public boolean accept(File file){
 				Pattern p = Pattern.compile
-						("\\.txt$|\\.ini$|\\.xml$\\.htm$|\\.csv$|\\.java$",Pattern.CASE_INSENSITIVE);
+						("\\.png$|\\.jpg$|\\.gif$\\.jpeg$|\\.bmp$",Pattern.CASE_INSENSITIVE);
 				Matcher m = p.matcher(file.getName());
 				Boolean shown = (m.find()||file.isDirectory())&&!file.isHidden();
 				return shown;

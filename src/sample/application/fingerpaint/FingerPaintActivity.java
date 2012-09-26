@@ -5,18 +5,26 @@ import java.io.FileOutputStream;
 import java.text.DecimalFormat;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.AlertDialog.Builder;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
+import android.graphics.BitmapFactory;
+import android.graphics.BitmapFactory.Options;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.media.MediaScannerConnection;
 import android.os.Bundle;
 import android.os.Environment;
 import android.view.Display;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MenuInflater;
@@ -62,8 +70,6 @@ public class FingerPaintActivity extends Activity implements OnTouchListener{
 		iv.setOnTouchListener(this);
 		
 	}
-
-
 	
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -72,19 +78,50 @@ public class FingerPaintActivity extends Activity implements OnTouchListener{
 		return super.onCreateOptionsMenu(menu);
 	}
 
-
-
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch(item.getItemId()){
 			case R.id.menu_save:
 				save();
 				break;
+			case R.id.menu_open:
+				Intent intent = new Intent(this, FilePicker.class);
+				startActivityForResult(intent, 0);
+				break;
+			case R.id.menu_color_change:
+				final String[] items = getResources().getStringArray(R.array.ColorName);
+				final int[] colors = getResources().getIntArray(R.array.Color);
+				AlertDialog.Builder ab = new AlertDialog.Builder(this);
+				ab.setTitle(R.string.menu_color_change);
+				ab.setItems(items, new DialogInterface.OnClickListener() {
+							public void onClick(DialogInterface dialog, int item){
+								paint.setColor(colors[item]);
+							}
+				});
+				ab.show();
+				break;
+			case R.id.menu_new:
+				ab = new AlertDialog.Builder(this);
+				ab.setTitle(R.string.menu_new);
+				ab.setMessage(R.string.confirm_new);
+				ab.setPositiveButton(R.string.button_ok,
+						new DialogInterface.OnClickListener() {
+								public void onClick(DialogInterface dialog, int which) {
+									canvas.drawColor(Color.WHITE);
+									((ImageView)findViewById(R.id.imageView1)).setImageBitmap(bitmap);
+								}
+						});
+				ab.setNegativeButton(R.string.button_cancel,
+						new DialogInterface.OnClickListener() {
+						public void onClick(DialogInterface dialog, int which) {
+							
+						}
+					});
+				ab.show();
+				break;
 		}
 		return super.onOptionsItemSelected(item);
 	}
-
-
 
 	public boolean onTouch (View v, MotionEvent event){
 		float x = event.getX();
@@ -122,6 +159,41 @@ public class FingerPaintActivity extends Activity implements OnTouchListener{
 		//return Boolean2.TRUE;
 	}
 	
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		super.onActivityResult(requestCode, resultCode, data);
+		
+		if(resultCode == RESULT_OK){
+			bitmap = loadImage(data.getStringExtra("fn"));
+			canvas = new Canvas(bitmap);
+			ImageView iv = (ImageView)this.findViewById(R.id.imageView1);
+			iv.setImageBitmap(bitmap);
+		}
+	}
+	
+	@Override
+	public boolean onKeyDown(int keyCode, KeyEvent event) {
+		if(keyCode == KeyEvent.KEYCODE_BACK){
+			AlertDialog.Builder ab = new AlertDialog.Builder(this);
+			ab.setTitle(R.string.title_exit);
+			ab.setMessage(R.string.confirm_new);
+			ab.setPositiveButton(R.string.button_ok,
+					new DialogInterface.OnClickListener() {
+						public void onClick(DialogInterface dialog, int which) {
+							finish();
+						}
+					});
+			ab.setNegativeButton(R.string.button_cancel,
+					new DialogInterface.OnClickListener(){
+						public void onClick(DialogInterface dialog, int which) {
+						}
+					});
+			ab.show();
+			return true;
+		}
+		return super.onKeyDown(keyCode, event);
+	}
+
 	public void save(){
 		SharedPreferences prefs = this.getSharedPreferences(
 									"FingerPaintPreferences",MODE_PRIVATE);
@@ -193,5 +265,40 @@ public class FingerPaintActivity extends Activity implements OnTouchListener{
 		mc.disconnect();
 	}
 	
+	public Bitmap loadImage(String path){
+		Boolean landscape = false;
+		Bitmap bm;
+		
+		BitmapFactory.Options options = new BitmapFactory.Options();
+		options.inJustDecodeBounds = true;
+		BitmapFactory.decodeFile(path, options);
+		Integer oh = options.outHeight;
+		Integer ow = options.outWidth;
+		
+		if(ow > oh){
+			landscape = true;
+			oh = options.outWidth;
+			ow = options.outHeight;
+		}
+		
+		options.inJustDecodeBounds = false;
+		options.inSampleSize = Math.max(ow/w, oh/h);
+		bm = BitmapFactory.decodeFile(path, options);
+		
+		if(landscape){
+			Matrix matrix = new Matrix();
+			matrix.setRotate(90.0f);
+			bm = Bitmap.createBitmap(bm, 0, 0, bm.getWidth(), bm.getHeight(),
+										matrix, false);
+		}
+		
+		bm = Bitmap.createScaledBitmap(bm, (int)(w),
+					(int)(w * (((double)oh)/((double)oh)/((double)ow))), false); 
+		Bitmap offBitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+		Canvas offCanvas = new Canvas(offBitmap);
+		offCanvas.drawBitmap(bm, 0, (h - bm .getHeight()) / 2, null);
+		bm = offBitmap;
+		return bm;
+	}
 }
 
