@@ -2,6 +2,7 @@ package sample.application.fingerpaint;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.text.DecimalFormat;
 
 import android.app.Activity;
@@ -23,6 +24,7 @@ import android.graphics.Path;
 import android.media.MediaScannerConnection;
 import android.os.Bundle;
 import android.os.Environment;
+import android.util.Log;
 import android.view.Display;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -50,6 +52,7 @@ public class FingerPaintActivity extends Activity implements OnTouchListener{
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		setContentView(R.layout.fingerpaint);
 		ImageView iv = (ImageView)this.findViewById(R.id.imageView1);
 		Display disp = ((WindowManager)this.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
 /*		WindowManager wm = ((WindowManager)this.getSystemService(Context.WINDOW_SERVICE));
@@ -60,15 +63,14 @@ public class FingerPaintActivity extends Activity implements OnTouchListener{
 		this.paint = new Paint();
 		this.path = new Path();
 		this.canvas = new Canvas(this.bitmap);
-		
 		this.paint.setStrokeWidth(5);
 		this.paint.setStyle(Paint.Style.STROKE);
 		this.paint.setStrokeJoin(Paint.Join.ROUND);
 		this.paint.setStrokeCap(Paint.Cap.ROUND);
 		this.canvas.drawColor(Color.WHITE);
+		
 		iv.setImageBitmap(this.bitmap);
 		iv.setOnTouchListener(this);
-		
 	}
 	
 	@Override
@@ -222,14 +224,22 @@ public class FingerPaintActivity extends Activity implements OnTouchListener{
 	}
 	
 	public Boolean writeImage(File file){
+		FileOutputStream fo = null;
 		try{
-			FileOutputStream fo = new FileOutputStream(file);
+			fo = new FileOutputStream(file);
 			bitmap.compress(CompressFormat.PNG, 100, fo);
 			fo.flush();
 			fo.close();
 		}catch(Exception e){
-			System.out.println(e.getLocalizedMessage());
-			return false;
+			e.printStackTrace();
+//			System.out.println(e.getLocalizedMessage());
+//			return false;
+		}finally{
+			try {
+				fo.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 		return true;
 	}
